@@ -58,12 +58,12 @@ class StallPlaybookTest {
 
     @Test fun deadlinesUseTheDefaultUntilThreeSamplesThenScaleTheMedianWithinBounds() {
         val bounds = AdaptiveDeadlines.bounds(ProgressStage.STARTING_PROJECTION, wireless)
-        assertEquals(AdaptiveDeadlines.Bounds(20_000, 15_000, 30_000), bounds)
-        assertEquals(20_000, AdaptiveDeadlines.deadline(emptyList(), bounds))
-        assertEquals(20_000, AdaptiveDeadlines.deadline(listOf(1_000, 1_000), bounds))
-        assertEquals(15_000, AdaptiveDeadlines.deadline(listOf(1_000, 1_000, 1_000), bounds))
-        assertEquals(25_000, AdaptiveDeadlines.deadline(listOf(9_000, 10_000, 30_000), bounds.copy(max = 40_000)))
-        assertEquals(30_000, AdaptiveDeadlines.deadline(listOf(20_000, 20_000, 20_000), bounds))
+        assertEquals(AdaptiveDeadlines.Bounds(45_000, 30_000, 60_000), bounds) // x86 fork: slow 2.4 GHz link
+        assertEquals(45_000, AdaptiveDeadlines.deadline(emptyList(), bounds))
+        assertEquals(45_000, AdaptiveDeadlines.deadline(listOf(1_000, 1_000), bounds))
+        assertEquals(30_000, AdaptiveDeadlines.deadline(listOf(1_000, 1_000, 1_000), bounds))
+        assertEquals(30_000, AdaptiveDeadlines.deadline(listOf(9_000, 10_000, 30_000), bounds.copy(max = 40_000)))
+        assertEquals(50_000, AdaptiveDeadlines.deadline(listOf(20_000, 20_000, 20_000), bounds))
         assertEquals(10_000L, AdaptiveDeadlines.median(listOf(9_000, 11_000)))
     }
 

@@ -439,6 +439,12 @@ internal object CarPlayMediaKeys {
     /** A steering-wheel media key captured outside the Android key stream (Geely/Lynk). */
     internal fun onExternalMediaKey(index: Int) = send(index, "geely-wheel")
 
+    /** CarLink x86: the FYT firmware's zLink call keys (answer, hang up) while CarPlay runs. */
+    internal fun onExternalCallKey(answer: Boolean): Boolean {
+        val active = synchronized(this) { controller } ?: return false
+        return runCatching { if (answer) active.answerCall() else active.endCall() }.getOrDefault(false)
+    }
+
     /** The steering-wheel microphone key captured outside the Android key stream (Geely/Lynk). */
     internal fun onExternalSiriKey(): Boolean {
         val active = synchronized(this) { controller } ?: return false

@@ -32,12 +32,15 @@ object AdaptiveDeadlines {
             ProgressStage.HANDSHAKE -> Bounds(12_000, 6_000, 25_000)
             // Never under 15 s: StartSession → first TCP took 14.7 s once when the iPhone missed the
             // first DHCP offers, and that start then worked (VENDOR_CHANGES, IPv6-first experiment).
-            ProgressStage.JOINING_WIFI -> Bounds(20_000, 15_000, 30_000)
+            // CarLink x86: the FYT SC9853i radio has a slow 2.4 GHz-only chip; its iPhone joined 15 to 20 s in.
+            ProgressStage.JOINING_WIFI -> Bounds(50_000, 40_000, 70_000)
             // The audit's "Picture without a frame" watchdog: 20 s; never under 15 s (C9 needed 10.3 s).
-            ProgressStage.STARTING_PROJECTION -> Bounds(20_000, 15_000, 30_000)
+            // CarLink x86: over that Wi-Fi, pairing to SETUP alone took 11 s and the 20 s cut a working start.
+            ProgressStage.STARTING_PROJECTION ->
+                if (wireless) Bounds(45_000, 30_000, 60_000) else Bounds(20_000, 15_000, 30_000)
             // A backstop for engines that loop between phases (each change restarts the phase
             // clocks); never earlier than the phase playbooks below can end on their own.
-            null -> if (wireless) Bounds(90_000, 60_000, 120_000) else Bounds(75_000, 60_000, 120_000)
+            null -> if (wireless) Bounds(180_000, 120_000, 240_000) else Bounds(75_000, 60_000, 120_000)
         }
     }
 

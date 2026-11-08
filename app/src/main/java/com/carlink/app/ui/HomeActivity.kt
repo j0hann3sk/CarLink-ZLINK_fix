@@ -10,6 +10,7 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.carlink.app.BuildConfig
 import com.carlink.core.core.PhoneKind
 import com.carlink.core.connection.Connection
 import com.carlink.core.entry.UsbWatcher
@@ -30,6 +31,11 @@ class HomeActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) { consumeAutoPhone(intent); consumeRecovery(intent); consumeCarSettings(intent) }
+        // CarLink x86 debug build: the log files go to /sdcard/CarLink-Logs once storage access is allowed.
+        if (BuildConfig.FILE_LOG && checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_FOR_LOGS)
+        }
         setContent {
             val display by vm.display.collectAsStateWithLifecycle()
             val profile = remember(display.uiProfileMode) { UiProfileDetector.detect(this, display.uiProfileMode) }
@@ -40,6 +46,11 @@ class HomeActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == STORAGE_FOR_LOGS) com.carlink.app.diagnostics.FileLogcat.rotate()
     }
 
     /**
@@ -139,6 +150,7 @@ class HomeActivity : ComponentActivity() {
         const val EXTRA_AUTO_PHONE_KIND = "com.carlink.app.extra.AUTO_PHONE_KIND"
         const val EXTRA_AUTO_PHONE_NAME = "com.carlink.app.extra.AUTO_PHONE_NAME"
         private const val PREWARM_DELAY_MILLIS = 2_500L
+        private const val STORAGE_FOR_LOGS = 7301
         private const val UPDATE_CHECK_DELAY_MILLIS = 8_000L
         fun intent(context: Context): Intent = Intent(context, HomeActivity::class.java)
 

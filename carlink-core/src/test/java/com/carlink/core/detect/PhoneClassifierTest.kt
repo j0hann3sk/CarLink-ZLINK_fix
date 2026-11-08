@@ -81,7 +81,8 @@ class PhoneClassifierTest {
     }
 
     @Test fun phoneWithSdpRecordsButNoIap2IsAndroid() {
-        assertEquals(PhoneKind.ANDROID, PhoneClassifier.classifyBluetooth(bt("Pixel 9", setOf(handsFree, a2dpSource)), null))
+        // CarLink x86 (CarPlay first): without the Android Auto service a phone is taken for an iPhone.
+        assertEquals(PhoneKind.IPHONE, PhoneClassifier.classifyBluetooth(bt("Pixel 9", setOf(handsFree, a2dpSource)), null))
         assertEquals(PhoneKind.ANDROID,
             PhoneClassifier.classifyBluetooth(bt(null, setOf(PhoneClassifier.ANDROID_AUTO_BLUETOOTH_UUID), major = null), null))
     }

@@ -38,6 +38,8 @@ object CarPlayMediaButton {
      * instant down/up pair, so a long press arrives as its own key rather than as a held one.
      */
     fun opensSiri(keyCode: Int): Boolean = keyCode == KeyEvent.KEYCODE_VOICE_ASSIST ||
+        // CarLink x86: FYT/SYU head units send the wheel's voice key as SEARCH to the app in front.
+        keyCode == KeyEvent.KEYCODE_SEARCH ||
         // CarLink: outside BYD these codes are other keys (312 is KEYCODE_RECENT_APPS on Android 14+).
         com.shilapi.xcertplay.hud.VehicleIntegrations.enabled &&
         (keyCode == KEYCODE_BYD_AUTO_MEDIA_VOICE || keyCode == KEYCODE_BYD_AUTO_MEDIA_VOICE_LONG)

@@ -413,7 +413,8 @@ object AirPlayPersistence {
 
     fun loadWifiP2pPreferredChannel(context: Context): Int = runCatching {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getInt(KEY_WIFI_P2P_PREFERRED_CHANNEL, WifiP2pChannels.AUTO)
+            // CarLink x86: channel 1 worked best on the FYT SC9853i radio's 2.4 GHz-only chip.
+            .getInt(KEY_WIFI_P2P_PREFERRED_CHANNEL, 1)
             .takeIf(WifiP2pChannels::isValid) ?: WifiP2pChannels.AUTO
     }.getOrDefault(WifiP2pChannels.AUTO)
 
@@ -1032,7 +1033,7 @@ object AirPlayPersistence {
 
     /** Whether to renegotiate resolution when entering/exiting freeform floating windows or launcher PiP. */
     fun loadAdaptPipResolution(context: Context): Boolean =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ADAPT_PIP_RESOLUTION, false)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ADAPT_PIP_RESOLUTION, true) // CarLink x86: split screen on by default
 
     fun saveAdaptPipResolution(context: Context, enabled: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_ADAPT_PIP_RESOLUTION, enabled).apply()
@@ -1413,7 +1414,7 @@ object AirPlayPersistence {
 
     fun loadHideBottomBar(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_HIDE_BOTTOM_BAR, true)
+            .getBoolean(KEY_HIDE_BOTTOM_BAR, false) // CarLink x86: FYT climate bar stays visible
 
     fun saveHideBottomBar(context: Context, hide: Boolean) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()

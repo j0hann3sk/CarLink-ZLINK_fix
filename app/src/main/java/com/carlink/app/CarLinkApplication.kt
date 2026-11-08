@@ -37,6 +37,15 @@ class CarLinkApplication : App() {
         } else {
             // The floating switcher over CarPlay / Android Auto (and the USB switch prompt).
             com.carlink.app.switcher.SwitcherController.install(this)
+            // CarLink x86: keep the radio's zLink from switching the USB port away from CarLink.
+            com.carlink.core.headunit.ZLinkPause.apply(this)
+            // CarLink x86: announce CarPlay to the FYT firmware like zLink (voice key -> Siri).
+            com.carlink.core.headunit.ZLinkBridge.install(this)
+            // CarLink x86 debug build: the app's whole log in files on the head unit.
+            if (BuildConfig.FILE_LOG) {
+                com.carlink.app.diagnostics.FileLogcat.start(this)
+                com.carlink.app.diagnostics.DebugServer.start(this)
+            }
         }
     }
 

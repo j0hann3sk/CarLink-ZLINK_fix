@@ -1,3 +1,117 @@
+> [!IMPORTANT]
+> **This is an unofficial fork of [F-e-n-y-x/CarLink](https://github.com/F-e-n-y-x/CarLink)
+> (based on v1.0.13), adapted for one specific FYT/SYU head unit with an Intel x86 SoC.**
+> It is not affiliated with or supported by the CarLink authors. For any other head unit, use
+> the [official CarLink](https://github.com/F-e-n-y-x/CarLink/releases/latest).
+
+> [!WARNING]
+> **100 % vibe-coded.** Every change in this fork was written by an AI (Claude) and checked only
+> by trying it out on one head unit in one car. Nobody has reviewed the code by hand. Expect
+> rough edges, and read the code before you trust it.
+
+## About this fork (FYT SC9853i, x86)
+
+### Target hardware
+
+| | |
+|---|---|
+| Head unit | FYT/SYU Android stereo (sold for Opel), firmware with `com.syu.ms` (MainServer) and preinstalled zLink (`com.zjinnova.zlink`) |
+| SoC | Unisoc/Spreadtrum **SC9853i** (Intel Airmont, **x86_64**); board `sp9853i_1h10_vmm` |
+| Android | **8.1 (API 27)**, while the firmware reports itself as "Android 10" |
+| Screen | 1024x768 panel used in **portrait, 768x1024** (`ro.sf.swrotation=90`), with the stereo's climate/Home/Back bar at the bottom |
+| Wi-Fi | **2.4 GHz only** (no 5 GHz), Wi-Fi Direct supported |
+| Tested with | one unit and one iPhone. The exact firmware build was not recorded. Other SC9853i FYT units may behave the same, but that is untested. |
+
+### What is different from upstream
+
+- **Native x86/x86_64 builds** of both engines (upstream ships ARM only, which the SC9853i runs
+  through slow binary translation). Separate package name `com.carlink.app.x86`, so it can sit
+  next to the official app. Auto-update is off.
+- **Portrait screen:** the stereo's bottom bar stays visible; split screen tells the iPhone the
+  new window (CarPlay view areas) instead of reconnecting.
+- **No reconnect when the full window changes size** (coming back from the stereo's home screen
+  changes the window by ~15 % because of the stereo's bars). Renegotiation only in split screen.
+- **Slow 2.4 GHz link:** longer wireless deadlines (iPhone joining 50 s, first TCP 45 s, picture
+  45 s, whole attempt 180 s). Wi-Fi Direct on **channel 1** by default.
+- **Steering-wheel voice key → Siri** ("Act as zLink for the stereo", on by default): while
+  CarPlay runs, CarLink announces itself to the FYT firmware the way zLink does
+  (`com.zjinnova.zlink` status broadcasts). The firmware then drops its Bluetooth hands-free link
+  to the iPhone, stops opening its Bluetooth app over CarPlay, and hands the voice key (and
+  answer/hang-up) to CarLink as zLink's special function codes 1500/5/6.
+- **"Pause zLink"** (on by default): sends zLink the firmware's own `ACTION_EXIT` command so it
+  stops its connect daemon. Turning the setting off sends `ACTION_ENTER`. zLink, its licence and
+  data are not touched.
+- iPhones with a custom Bluetooth name are no longer taken for Android phones.
+- Fix: Android 8 crash ("startForegroundService() did not then call startForeground()") when a
+  wired iPhone drops right after plugging in.
+- **Debug build** (`-Pcarlink.fileLog=true`): the whole log in rotating files
+  (`Download/CarLink-Logs`, or `Android/data/com.carlink.app.x86/files/carlink-logs`) and a
+  read-only web page on port 8686 in the stereo's network (no password: only use it in a network
+  you trust).
+
+### Known problems
+
+- **Wi-Fi channel:** the stereo's Wi-Fi is slow and picky. Channel 6 (the automatic choice) barely
+  worked; **channel 1 worked best** (Settings › Connection › Show advanced › "Wi-Fi Direct
+  channel"). Try 1, 6 and 11 on your unit. The link can still drop in the middle of a drive.
+- **When nothing connects any more:** switching the connection type to "Same Wi-Fi" or "Hotspot"
+  and back to Wi-Fi Direct resets the Wi-Fi adapter. This is not automatic yet.
+- **Wired (USB) CarPlay does not work:** the iPhone disappears from Android's USB bus about 4 s
+  after it is plugged in, before CarLink talks to it. Pausing zLink did not change it; port,
+  power or the firmware's USB/OTG switching are suspected. Lowering "iPhone charging over USB" is
+  worth a try.
+- **Plugging the iPhone in while wireless CarPlay runs** makes CarLink switch to USB, which then
+  fails. Don't plug it in while wireless is connected.
+- "Same Wi-Fi" mode does not connect on this unit; the stereo's own Android hotspot does not work
+  either (same Wi-Fi chip).
+- The iPhone may ask about "CarPlay Ultra" on first connection; confirming it works normally.
+- "Act as zLink" also makes the firmware switch its audio source and USB hub line like it does
+  for zLink. If sound or USB behaves oddly, turn the setting off.
+- Android Auto was not a goal of this fork and is untested on this unit.
+
+### To do
+
+- Find out why the iPhone drops off USB (wired CarPlay).
+- Do the Wi-Fi adapter reset (the connection-type switch) automatically before a retry.
+- Recover from Wi-Fi Direct drops without a full new connection.
+- Test the steering-wheel call keys and the hands-free hand-over in real calls.
+
+### CarPlay authentication files (not included)
+
+This repository contains **no CarPlay accessory identity**, just like upstream (see
+[docs/BUILDING.md](docs/BUILDING.md#carplay-authentication-files-not-in-git)). Without the two
+files `offline-mfi/identity.pk8` and `offline-mfi/certificate.p7b`, CarPlay does not connect.
+Upstream's and DiPlay's **official release APKs** contain them: extract them from an official
+release APK you downloaded yourself (they are inside the APK's `assets/offline-mfi/`), put them
+in a folder as `offline-mfi/…`, and point the build at that folder with `DIPLAY_AUTH_ASSETS_DIR`.
+Read upstream's "CarPlay notice" below and DiPlay's README about what this identity is and its
+limits. **Do not publish APKs that contain these files.**
+
+### Building
+
+```sh
+export DIPLAY_AUTH_ASSETS_DIR=/path/to/folder-containing-offline-mfi
+# your own signing key:
+export ANDROID_KEYSTORE_PATH=... ANDROID_KEYSTORE_PASSWORD=... ANDROID_KEY_ALIAS=... ANDROID_KEY_PASSWORD=...
+./gradlew -Pcarlink.x86HeadUnit=true :app:assembleRelease                         # normal build
+./gradlew -Pcarlink.x86HeadUnit=true -Pcarlink.fileLog=true :app:assembleRelease  # debug build with log files
+```
+
+The APK is `app/build/outputs/apk/release/app-release.apk`. Everything else is as upstream
+describes below.
+
+### Licence
+
+Like upstream, this fork is licensed under the **GNU AGPL-3.0** ([LICENSE](LICENSE)). All
+copyright notices of CarLink, DiPlay, DiAuto and the projects they build on are kept. The changes
+of this fork are listed above and in the git history (on top of upstream tag `v1.0.13`).
+zLink and the FYT firmware were only examined to talk to them; none of their code or files is
+included.
+
+---
+
+*Upstream README follows.*
+
 <div align="center">
 
 <picture>

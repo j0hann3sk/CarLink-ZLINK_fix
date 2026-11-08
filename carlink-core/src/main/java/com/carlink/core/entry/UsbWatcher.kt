@@ -81,6 +81,8 @@ class UsbWatcher private constructor(context: Context) {
         Log.i(TAG, "USB ${"%04x:%04x".format(device.vendorId, device.productId)} -> $kind")
         com.carlink.core.diagnostics.EventLog.add("USB", "${"%04x:%04x".format(device.vendorId, device.productId)} -> $kind")
         if (kind == PhoneKind.UNKNOWN) return
+        // CarLink x86: before the radio's zLink grabs the port (ZLinkPause).
+        if (kind == PhoneKind.IPHONE) com.carlink.core.headunit.ZLinkPause.apply(app)
         val attach = Intent(UsbManager.ACTION_USB_DEVICE_ATTACHED).putExtra(UsbManager.EXTRA_DEVICE, device)
         Connection.get(app).onUsbPhone(kind, com.carlink.core.detect.UsbPhoneNames.resolve(app, kind, device), attach)
     }

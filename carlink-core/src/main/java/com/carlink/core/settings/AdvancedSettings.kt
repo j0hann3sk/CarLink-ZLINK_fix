@@ -4,8 +4,11 @@ import android.content.Context
 import android.os.Bundle
 import com.carlink.core.core.Engine
 import com.carlink.core.engine.AndroidAutoSettings
+import com.carlink.core.headunit.ZLinkBridge
+import com.carlink.core.headunit.ZLinkPause
 import com.shilapi.xcertplay.AirPlayPersistence
 import com.shilapi.xcertplay.CarPlayDock
+import com.shilapi.xcertplay.SplitScreenSettings
 import com.shilapi.xcertplay.UsbChargingCurrent
 
 /** Where an Advanced or Lab setting appears (the same categories as the Essentials). */
@@ -128,6 +131,9 @@ object AdvancedSettings {
         AdvancedSetting("cp_adapt_pip", Engine.CARPLAY, SettingsCategory.DISPLAY, Tier.ADVANCED,
             "Re-negotiate size in split screen", "Off scales the picture; on asks the iPhone for the new size.",
             Applies.NOW, carPlayToggle(AirPlayPersistence::loadAdaptPipResolution, AirPlayPersistence::saveAdaptPipResolution)),
+        AdvancedSetting("cp_split_screen", Engine.CARPLAY, SettingsCategory.DISPLAY, Tier.ADVANCED,
+            "Split-screen area", "Tells the iPhone about the split-screen window, so CarPlay redraws for it without reconnecting.",
+            Applies.NEXT_CONNECTION, carPlayToggle(SplitScreenSettings::enabled, SplitScreenSettings::setEnabled)),
         // iOS 27 black screen with sound (DiPlay #249, #975); less GPU work per frame. DiPlay reads it
         // each time its host opens. Automatic picture turns it on on slow hardware, so an edit makes Picture Custom.
         AdvancedSetting("cp_direct_output", Engine.CARPLAY, SettingsCategory.DISPLAY, Tier.ADVANCED,
@@ -180,6 +186,14 @@ object AdvancedSettings {
             Applies.NEXT_CONNECTION, carPlayToggle(AirPlayPersistence::loadCallVoiceFilter, AirPlayPersistence::saveCallVoiceFilter)),
 
         // ---------- CarPlay: connection, car, lab ----------
+        // CarLink x86: FYT radios' zLink takes the USB port from CarLink (ZLinkPause).
+        AdvancedSetting("cp_pause_zlink", Engine.CARPLAY, SettingsCategory.CONNECTION, Tier.ADVANCED,
+            "Pause zLink", "Stops the head unit's zLink app from taking the iPhone over USB. Turn off to give zLink back its USB connection.",
+            Applies.NOW, carPlayToggle(ZLinkPause::enabled, ZLinkPause::setEnabled)),
+        // CarLink x86: FYT radios hand the wheel's voice key to zLink only (ZLinkBridge).
+        AdvancedSetting("cp_act_as_zlink", Engine.CARPLAY, SettingsCategory.CONNECTION, Tier.ADVANCED,
+            "Act as zLink for the stereo", "While CarPlay runs, the stereo treats CarLink like its zLink app: the wheel's voice key opens Siri, the stereo's Bluetooth phone link and its call screen stay out of the way.",
+            Applies.NEXT_CONNECTION, carPlayToggle(ZLinkBridge::enabled, ZLinkBridge::setEnabled)),
         AdvancedSetting("cp_p2p_channel", Engine.CARPLAY, SettingsCategory.CONNECTION, Tier.ADVANCED,
             "Wi-Fi Direct channel", "Pin CarPlay's Wi-Fi Direct link to a band or channel if it drops.",
             Applies.NEXT_CONNECTION, carPlayIntChoice(options(0 to "Automatic", -5 to "Automatic, 5 GHz", -2 to "Automatic, 2.4 GHz",

@@ -27,14 +27,14 @@ class ConnectionProfilesTest {
     @Test fun deadlinesAreTheDefaultUntilThreeSamplesThenTwoAndAHalfTimesTheMedianWithinBounds() {
         val p = store()
         val picture = ProgressStage.STARTING_PROJECTION
-        assertEquals(20_000, p.deadline(iphone, wd, picture))
+        assertEquals(45_000, p.deadline(iphone, wd, picture))
         p.recordStage(iphone, wd, picture, 7_000)
         p.recordStage(iphone, wd, picture, 9_000)
-        assertEquals("two samples are not enough", 20_000, p.deadline(iphone, wd, picture))
+        assertEquals("two samples are not enough", 45_000, p.deadline(iphone, wd, picture))
         p.recordStage(iphone, wd, picture, 8_000)
-        assertEquals(20_000, p.deadline(iphone, wd, picture)) // 2.5 x 8 s
+        assertEquals(30_000, p.deadline(iphone, wd, picture)) // 2.5 x 8 s, raised to the 30 s floor (x86 fork)
         repeat(5) { p.recordStage(iphone, wd, picture, 30_000) }
-        assertEquals("capped", 30_000, p.deadline(iphone, wd, picture))
+        assertEquals("capped", 60_000, p.deadline(iphone, wd, picture))
         // The waiting phase over Bluetooth: a 6 s page gives 15 s.
         repeat(3) { p.recordStage(iphone, wd, ProgressStage.WAITING_FOR_PHONE, 6_000) }
         assertEquals(15_000, p.deadline(iphone, wd, ProgressStage.WAITING_FOR_PHONE))
@@ -44,10 +44,10 @@ class ConnectionProfilesTest {
 
     @Test fun anotherWirelessPathsSamplesStandInForANewPath() {
         val p = store()
-        repeat(3) { p.recordStage(iphone, wd, ProgressStage.JOINING_WIFI, 8_000) }
-        assertEquals(20_000, p.deadline(iphone, WirelessPath.CAR_HOTSPOT, ProgressStage.JOINING_WIFI))
+        repeat(3) { p.recordStage(iphone, wd, ProgressStage.JOINING_WIFI, 20_000) }
+        assertEquals(50_000, p.deadline(iphone, WirelessPath.CAR_HOTSPOT, ProgressStage.JOINING_WIFI))
         repeat(3) { p.recordStage(iphone, WirelessPath.CAR_HOTSPOT, ProgressStage.JOINING_WIFI, 1_000) }
-        assertEquals("the path's own samples win, above the floor", 15_000,
+        assertEquals("the path's own samples win, above the floor", 40_000,
             p.deadline(iphone, WirelessPath.CAR_HOTSPOT, ProgressStage.JOINING_WIFI))
         repeat(3) { p.recordStage(iphone, wd, ProgressStage.HANDSHAKE, 1_000) }
         assertEquals(6_000, p.deadline(iphone, WirelessPath.CAR_HOTSPOT, ProgressStage.HANDSHAKE))
@@ -57,11 +57,11 @@ class ConnectionProfilesTest {
 
     @Test fun theWholeAttemptDeadlineLearnsFromTimeToPicture() {
         val p = store()
-        assertEquals(90_000, p.deadline(iphone, wd, null))
+        assertEquals(180_000, p.deadline(iphone, wd, null))
         listOf(30_000L, 32_000L, 34_000L).forEach { p.recordSuccess(iphone, wd, it) }
-        assertEquals(80_000, p.deadline(iphone, wd, null))
+        assertEquals(120_000, p.deadline(iphone, wd, null))
         listOf(4_000L, 4_000L, 4_000L).forEach { p.recordSuccess(iphone, wd, it) }
-        assertEquals("never below the phases' own playbooks", 60_000, p.deadline(iphone, wd, null))
+        assertEquals("never below the phases' own playbooks", 120_000, p.deadline(iphone, wd, null))
     }
 
     @Test fun healthSummarisesSuccessRateTimeToPictureBestPathAndLastProblems() {

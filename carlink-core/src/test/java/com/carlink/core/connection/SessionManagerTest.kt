@@ -643,18 +643,18 @@ class SessionManagerTest {
         advance(AdaptiveDeadlines.HINT_MILLIS + 1)
         assertEquals("the driver is told before anything is torn down", Notice.Kind.SLOW, active(m).notice?.kind)
         assertEquals(1, starts.size)
-        advance(10_000)
+        advance(35_000)
         assertEquals(listOf("CARPLAY start WIRELESS WIFI_DIRECT", "CARPLAY start WIRELESS WIFI_DIRECT"), starts)
         assertEquals(RecoveryAction.RETRY_STEP, active(m).notice?.action)
         assertTrue(active(m).phase.let { it is SessionState.Phase.Retrying || it is SessionState.Phase.Starting })
         carPlay.emit(AdapterEvent.Progress(4, 4, ProgressStage.STARTING_PROJECTION)); idle()
-        advance(20_001)
+        advance(45_001)
         assertEquals("CARPLAY start WIRELESS CAR_HOTSPOT", starts.last())
         carPlay.emit(AdapterEvent.Progress(4, 4, ProgressStage.STARTING_PROJECTION)); idle()
-        advance(20_001)
+        advance(45_001)
         assertEquals(4, starts.size)
         carPlay.emit(AdapterEvent.Progress(4, 4, ProgressStage.STARTING_PROJECTION)); idle()
-        advance(20_001)
+        advance(45_001)
         val failed = m.state.value as SessionState.Failed
         assertEquals(FailureReason.LINK_TOO_WEAK, failed.reason)
         assertEquals(4, starts.size)
@@ -698,17 +698,17 @@ class SessionManagerTest {
     }
 
     @Test fun deadlinesFollowThisPhonesOwnTimings() {
-        // A phone whose picture always starts in 8 s gets 20 s (2.5 x 8), not the 15 s floor.
+        // A phone whose picture always starts in 20 s gets 50 s (2.5 x 20), not the 30 s floor (x86 fork).
         val request = SessionRequest(Engine.CARPLAY, Transport.WIRELESS, "AA:BB", "iPhone")
-        repeat(3) { profiles.recordStage(request, WirelessPath.WIFI_DIRECT, ProgressStage.STARTING_PROJECTION, 8_000) }
-        assertEquals(20_000, profiles.deadline(request, WirelessPath.WIFI_DIRECT, ProgressStage.STARTING_PROJECTION))
+        repeat(3) { profiles.recordStage(request, WirelessPath.WIFI_DIRECT, ProgressStage.STARTING_PROJECTION, 20_000) }
+        assertEquals(50_000, profiles.deadline(request, WirelessPath.WIFI_DIRECT, ProgressStage.STARTING_PROJECTION))
         val fast = SessionRequest(Engine.CARPLAY, Transport.WIRELESS, "CC:DD", "iPhone 2")
         repeat(3) { profiles.recordStage(fast, WirelessPath.WIFI_DIRECT, ProgressStage.STARTING_PROJECTION, 1_000) }
         val m = manager()
         m.connect("CC:DD", PhoneKind.IPHONE, "iPhone 2"); idle()
         carPlay.emit(AdapterEvent.Progress(4, 4, ProgressStage.STARTING_PROJECTION)); idle()
-        advance(15_001)
-        assertEquals("the fast phone is retried at the 15 s floor", 2, starts.size)
+        advance(30_001)
+        assertEquals("the fast phone is retried at the 30 s floor", 2, starts.size)
     }
 
     @Test fun aConnectionTeachesTheProfileItsPhaseTimesAndHealth() {
@@ -801,7 +801,7 @@ class SessionManagerTest {
         m.connect("AA:BB", PhoneKind.IPHONE, "iPhone"); idle()
         carPlay.emit(AdapterEvent.Progress(4, 4, ProgressStage.STARTING_PROJECTION)); idle()
         val old = carPlay.listener!!
-        advance(20_001)
+        advance(45_001)
         assertEquals(2, starts.size)
         old(AdapterEvent.Connected); idle()
         assertTrue(active(m).phase != SessionState.Phase.Connected)

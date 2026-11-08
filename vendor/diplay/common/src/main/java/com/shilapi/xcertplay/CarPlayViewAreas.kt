@@ -195,7 +195,7 @@ object SplitScreenSettings {
     private const val PREFS = "diplay_split_screen"
     private const val KEY_ENABLED = "enabled"
 
-    fun enabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, false)
+    fun enabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, true) // CarLink x86: split screen on by default
 
     fun setEnabled(context: Context, enabled: Boolean) = prefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
 

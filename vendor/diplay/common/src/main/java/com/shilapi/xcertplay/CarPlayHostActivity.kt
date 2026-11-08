@@ -5787,7 +5787,7 @@ open class CarPlayHostActivity : ComponentActivity() {
             }
         }
         try {
-            ContextCompat.startForegroundService(this, Intent(this, DiPlaySessionService::class.java))
+            DiPlaySessionService.start(this)
             next.start()
         } catch (error: RuntimeException) {
             appendLog("Connection could not start: ${error.javaClass.simpleName}")
@@ -5919,7 +5919,8 @@ open class CarPlayHostActivity : ComponentActivity() {
             Log.i(TAG, message)
             videoView?.let { updateVideoLayout(it.width, it.height) }
         } else if (display != null && !layoutChanged &&
-            size.width <= display.windowWidth && size.height <= display.windowHeight) {
+            size.width <= display.windowWidth &&
+            (size.height <= display.windowHeight || !isMultiWindowActive())) { // CarLink x86: a taller full window scales
             // Keep camera shrink/restore cycles within the original window connected. If the
             // session started in a camera window, growth beyond it needs a full-size canvas.
             val message = "Display changed ${previous.width}x${previous.height} -> ${size.width}x${size.height}; " +
@@ -6006,7 +6007,9 @@ open class CarPlayHostActivity : ComponentActivity() {
             val baseAspect = display.windowWidth.toDouble() / display.windowHeight
             val currentAspect = newSize.width.toDouble() / newSize.height
             val aspectDiff = kotlin.math.abs(currentAspect / baseAspect - 1.0)
-            if (aspectDiff > 0.08 && AirPlayPersistence.loadAdaptPipResolution(this)) {
+            // CarLink x86: only in split screen; the FYT radio's bars change the full window by 15 %
+            // when the driver comes back from its home screen, and that tore down a running session.
+            if (aspectDiff > 0.08 && AirPlayPersistence.loadAdaptPipResolution(this) && isMultiWindowActive()) {
                 return true
             }
         }
@@ -6493,7 +6496,7 @@ open class CarPlayHostActivity : ComponentActivity() {
                 applicationContext.stopService(Intent(applicationContext, CarPlayVpnService::class.java))
             }
             Log.i(TAG, "shutdown complete clean=$clean")
-            applicationContext.stopService(Intent(applicationContext, DiPlaySessionService::class.java))
+            DiPlaySessionService.stop(applicationContext)
             teardownExecutor.shutdown()
             mainHandler.post { HostSessions.teardownFinished(); completion() } // CarLink: teardown accounting
             if (terminateProcess) Process.killProcess(Process.myPid())

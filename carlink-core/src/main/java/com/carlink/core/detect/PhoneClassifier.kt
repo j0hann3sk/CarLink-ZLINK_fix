@@ -109,13 +109,17 @@ object PhoneClassifier {
      * A phone with no cached SDP record and a custom name stays UNKNOWN until SDP completes.
      */
     fun classifyBluetooth(device: BluetoothDeviceInfo, remembered: PhoneKind?): PhoneKind {
-        if (remembered != null && remembered != PhoneKind.UNKNOWN) return remembered
+        // CarLink x86: the iAP2 record is proof, so it also corrects an earlier wrong guess.
         if (IAP2_BLUETOOTH_UUID in device.uuids) return PhoneKind.IPHONE
+        if (remembered != null && remembered != PhoneKind.UNKNOWN) return remembered
         val name = device.name.orEmpty().lowercase(Locale.ROOT)
         if ("iphone" in name || "ipad" in name) return PhoneKind.IPHONE
         if (ANDROID_AUTO_BLUETOOTH_UUID in device.uuids) return PhoneKind.ANDROID
         val isPhone = device.majorClass == null || device.majorClass == BLUETOOTH_MAJOR_PHONE
-        if (isPhone && device.uuids.isNotEmpty()) return PhoneKind.ANDROID
+        // CarLink x86 (CarPlay first): a phone without the Android Auto service is taken for an
+        // iPhone, so an iPhone with a custom name ("Johns Phone") whose iAP2 record is not cached yet
+        // still gets CarPlay.
+        if (isPhone && device.uuids.isNotEmpty()) return PhoneKind.IPHONE
         return PhoneKind.UNKNOWN
     }
 }

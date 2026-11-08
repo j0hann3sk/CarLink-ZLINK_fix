@@ -67,6 +67,8 @@ android {
         versionName = "1.0.13"
         versionCode = carLinkVersionCode(versionName!!)
         buildConfigField("String", "DIPLAY_VERSION_NAME", "\"$diPlayVersionName\"")
+        // -Pcarlink.fileLog=true: the debug build for the head unit, with the log kept in files.
+        buildConfigField("boolean", "FILE_LOG", (providers.gradleProperty("carlink.fileLog").orNull == "true").toString())
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // The Android Auto engine library ships two distribution flavors; CarLink uses github.
@@ -99,14 +101,33 @@ android {
     // native code no car stereo runs (docs/LOW_END_PERFORMANCE.md).
     val armAbis = listOf("arm64-v8a", "armeabi-v7a")
     val releaseEmulatorAbi = providers.gradleProperty("carlink.emulatorAbi").orNull == "true"
+    // -Pcarlink.x86HeadUnit=true: a build for Intel/x86 head units (Spreadtrum SC9853i,
+    // FYT/SYU), with native x86 and x86_64 engines next to ARM, under its own package.
+    val x86HeadUnit = providers.gradleProperty("carlink.x86HeadUnit").orNull == "true"
+    val x86Abis = listOf("x86", "x86_64")
     buildTypes {
         debug {
             applicationIdSuffix = providers.gradleProperty("carlink.debugApplicationIdSuffix").get()
             versionNameSuffix = "-hud-test"
-            ndk { abiFilters += armAbis + "x86_64" }
+            ndk { abiFilters += armAbis + x86Abis }
         }
         release {
-            ndk { abiFilters += if (releaseEmulatorAbi) armAbis + "x86_64" else armAbis }
+            ndk {
+                abiFilters += when {
+                    x86HeadUnit -> armAbis + x86Abis
+                    releaseEmulatorAbi -> armAbis + "x86_64"
+                    else -> armAbis
+                }
+            }
+            if (x86HeadUnit) {
+                applicationIdSuffix = ".x86"
+                versionNameSuffix = "-x86"
+                // The debug build for the head unit: debuggable (adb over Wi-Fi, run-as) and still R8-fast.
+                if (providers.gradleProperty("carlink.fileLog").orNull == "true") {
+                    isDebuggable = true
+                    versionNameSuffix = "-x86-debug"
+                }
+            }
             // R8 shrinks and optimizes code and resources, without renaming (-dontobfuscate):
             // app rules in src/main/keepRules/carlink.keep, engine rules in the engines'
             // consumer files (design/RESEARCH_2026-10_R8_PLATFORM.md, phase 1).

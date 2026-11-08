@@ -58,6 +58,21 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/update_apk_paths" />
         </provider>
+        <!-- CarLink x86: FYT/SYU head units open the assistant for the wheel's voice key by intent. -->
+        <activity android:name="com.shilapi.xcertplay.VoiceKeyActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:label="CarLink (Siri)"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VOICE_ASSIST" />
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity android:name="com.shilapi.xcertplay.DiPlayActivity"
             android:exported="true" android:launchMode="singleTop"
             android:resizeableActivity="true"

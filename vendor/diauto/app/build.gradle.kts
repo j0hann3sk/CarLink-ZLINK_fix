@@ -85,7 +85,7 @@ android {
 
         ndk {
             // Match the CarPlay engine; BYD head units are ARM.
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
         }
     }
 
